@@ -4,7 +4,7 @@
     'label': 'Rdoc'
     'submenu': [
       'label': 'Toggle Viewer'
-      'command': 'rdoc-view:toggle'
+      'command': 'rdoc-viewer:toggle'
     ]
   ]
 ]

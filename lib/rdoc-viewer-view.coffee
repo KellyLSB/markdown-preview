@@ -1,8 +1,9 @@
 path = require 'path'
-{$, $$$, EditorView, ScrollView} = require 'atom'
+{$, $$$, EditorView, ScrollView, BufferedProcess} = require 'atom'
 _ = require 'underscore-plus'
 {File} = require 'pathwatcher'
 {extensionForFenceName} = require './extension-helper'
+
 
 module.exports =
 class RdocViewerView extends ScrollView
