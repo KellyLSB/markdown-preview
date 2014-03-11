@@ -1,7 +1,7 @@
 url = require 'url'
 fs = require 'fs-plus'
 
-MarkdownPreviewView = require './markdown-preview-view'
+RdocViewerView = require './rdoc-viewer-view'
 
 module.exports =
   configDefaults:
@@ -13,27 +13,27 @@ module.exports =
     ]
 
   activate: ->
-    atom.workspaceView.command 'markdown-preview:toggle', =>
+    atom.workspaceView.command 'rdoc-viewer:toggle', =>
       @toggle()
 
     atom.workspace.registerOpener (uriToOpen) ->
       {protocol, host, pathname} = url.parse(uriToOpen)
       pathname = decodeURI(pathname) if pathname
-      return unless protocol is 'markdown-preview:'
+      return unless protocol is 'rdoc-viewer:'
 
       if host is 'editor'
-        new MarkdownPreviewView(editorId: pathname.substring(1))
+        new RdocViewerView(editorId: pathname.substring(1))
       else
-        new MarkdownPreviewView(filePath: pathname)
+        new RdocViewerView(filePath: pathname)
 
   toggle: ->
     editor = atom.workspace.getActiveEditor()
     return unless editor?
 
-    grammars = atom.config.get('markdown-preview.grammars') ? []
+    grammars = atom.config.get('rdoc-viewer.grammars') ? []
     return unless editor.getGrammar().scopeName in grammars
 
-    uri = "markdown-preview://editor/#{editor.id}"
+    uri = "rdoc-viewer://editor/#{editor.id}"
 
     previewPane = atom.workspace.paneForUri(uri)
     if previewPane
@@ -41,7 +41,7 @@ module.exports =
       return
 
     previousActivePane = atom.workspace.getActivePane()
-    atom.workspace.open(uri, split: 'right', searchAllPanes: true).done (markdownPreviewView) ->
-      if markdownPreviewView instanceof MarkdownPreviewView
-        markdownPreviewView.renderMarkdown()
+    atom.workspace.open(uri, split: 'right', searchAllPanes: true).done (rdocViewerView) ->
+      if rdocViewerView instanceof RdocViewerView
+        rdocViewerView.renderRdoc()
         previousActivePane.activate()

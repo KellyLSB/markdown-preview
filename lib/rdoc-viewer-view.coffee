@@ -5,14 +5,14 @@ _ = require 'underscore-plus'
 {extensionForFenceName} = require './extension-helper'
 
 module.exports =
-class MarkdownPreviewView extends ScrollView
+class RdocViewerView extends ScrollView
   atom.deserializers.add(this)
 
   @deserialize: (state) ->
-    new MarkdownPreviewView(state)
+    new RdocViewerView(state)
 
   @content: ->
-    @div class: 'markdown-preview native-key-bindings', tabindex: -1
+    @div class: 'rdoc-viewer native-key-bindings', tabindex: -1
 
   constructor: ({@editorId, filePath}) ->
     super
@@ -24,7 +24,7 @@ class MarkdownPreviewView extends ScrollView
       @handleEvents()
 
   serialize: ->
-    deserializer: 'MarkdownPreviewView'
+    deserializer: 'RdocViewerView'
     filePath: @getPath()
     editorId: @editorId
 
@@ -56,7 +56,7 @@ class MarkdownPreviewView extends ScrollView
     null
 
   handleEvents: ->
-    @subscribe atom.syntax, 'grammar-added grammar-updated', _.debounce((=> @renderMarkdown()), 250)
+    @subscribe atom.syntax, 'grammar-added grammar-updated', _.debounce((=> @renderRdoc()), 250)
     @subscribe this, 'core:move-up', => @scrollUp()
     @subscribe this, 'core:move-down', => @scrollDown()
 
@@ -71,35 +71,46 @@ class MarkdownPreviewView extends ScrollView
     else if @editor?
       @subscribe(@editor.getBuffer(), 'contents-modified', changeHandler)
 
-  renderMarkdown: ->
+  renderRdoc: ->
     @showLoading()
     if @file?
-      @file.read().then (contents) => @renderMarkdownText(contents)
+      @file.read().then (contents) => @renderRdocText(contents)
     else if @editor?
-      @renderMarkdownText(@editor.getText())
+      @renderRdocText(@editor.getText())
 
-  renderMarkdownText: (text) ->
-    roaster = require 'roaster'
-    sanitize = true
-    roaster text, {sanitize}, (error, html) =>
-      if error
-        @showError(error)
+  renderRdocText: (text) ->
+    command = 'sdoc'
+    temp_file = new File('/tmp/rdoc_' + @editorId + '.html')
+    temp_file.write(text)
+    # sdoc ~/src/jiff/platform_x3/gems/jiff_messaging/lib/jiff_messaging/builder.rb -T direct -Z > /tmp/sdoc.html
+    args = [temp_file.getPath, '-T', 'direct', '-Z']
+
+    output = []
+    errors = []
+    stdout = (data) -> output.push(data)
+    stderr = (data) -> errors.push(data)
+
+    exit = (code) ->
+      if errors.length < 1
+        @html(output.join(' '))
       else
-        @html(@tokenizeCodeBlocks(@resolveImagePaths(html)))
+        @html(errors.join(' '))
+
+    process = new BufferedProcess({command, args, stdout, stderr, exit})
 
   getTitle: ->
     if @file?
-      "#{path.basename(@getPath())} Preview"
+      "#{path.basename(@getPath())} Docs"
     else if @editor?
-      "#{@editor.getTitle()} Preview"
+      "#{@editor.getTitle()} Docs"
     else
-      "Markdown Preview"
+      "Rdoc Preview"
 
   getUri: ->
     if @file?
-      "markdown-preview://#{@getPath()}"
+      "rdoc-viewer://#{@getPath()}"
     else
-      "markdown-preview://editor/#{@editorId}"
+      "rdoc-viewer://editor/#{@editorId}"
 
   getPath: ->
     if @file?
@@ -111,12 +122,12 @@ class MarkdownPreviewView extends ScrollView
     failureMessage = result?.message
 
     @html $$$ ->
-      @h2 'Previewing Markdown Failed'
+      @h2 'Compiling Rdoc Failed'
       @h3 failureMessage if failureMessage?
 
   showLoading: ->
     @html $$$ ->
-      @div class: 'markdown-spinner', 'Loading Markdown\u2026'
+      @div class: 'rdoc-spinner', 'Loading Documentation\u2026'
 
   resolveImagePaths: (html) =>
     html = $(html)

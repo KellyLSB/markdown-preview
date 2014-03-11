@@ -1,0 +1,10 @@
+'menu': [
+  'label': 'Packages'
+  'submenu': [
+    'label': 'Rdoc'
+    'submenu': [
+      'label': 'Toggle Viewer'
+      'command': 'rdoc-view:toggle'
+    ]
+  ]
+]
